@@ -194,6 +194,7 @@ class Book
 // Exception Handling: Add global exception handling to return proper error responses.
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
