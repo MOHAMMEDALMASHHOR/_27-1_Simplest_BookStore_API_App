@@ -29,6 +29,15 @@ Fetches all books published in the specified year.
 - Entity Framework Core
 - Swagger (Swashbuckle)
 
+## Added Features
+- Model Validation: DataAnnotations are used in the Book class for validation. The POST and PUT endpoints check if the provided Book object is valid before proceeding with the operation.
+
+- Search Functionality: A new GET endpoint /books/search/{query} allows users to search for books by title.
+
+- Detailed Responses: The endpoints now return more detailed responses, including error messages for validation failures and confirmation messages for successful deletions.
+
+- Global Exception Handling: Added a middleware for global exception handling to catch unhandled exceptions and return a generic error response. This helps in hiding implementation - - details from the client and provides a consistent error structure.
+
 ## License
 
 This project is open source and available under the [MIT License](LICENSE).
