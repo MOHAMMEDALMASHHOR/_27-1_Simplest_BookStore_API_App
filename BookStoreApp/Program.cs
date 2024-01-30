@@ -103,7 +103,7 @@ class Book
 // Running the Application: app.Run() starts the application, listening for incoming HTTP requests.
 
 // Book Class: Defines the structure of a book entity with Id, Title, and Year as properties. The Id property is annotated with [Key] to signify its role as a unique identifier, although this is more of a formality in this context since there's no real database.
- using Microsoft.AspNetCore.Builder;
+/*  using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
@@ -183,6 +183,122 @@ class Book
     [Key]
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
+    public int Year { get; set; }
+} */
+
+// To expand the given code, we can introduce more features and improvements to make the API more robust and user-friendly. Here are some enhancements:
+
+// Model Validation: Add data annotations to the Book class for validation and apply validation checks in the POST and PUT endpoints.
+// Search Functionality: Add an endpoint to search books by title.
+// Detailed Responses: Return more detailed responses for create, update, and delete operations.
+// Exception Handling: Add global exception handling to return proper error responses.
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container, including Swagger for API documentation.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// In-memory book list to simulate database storage.
+var books = new List<Book>
+{
+    new Book { Id = 1, Title = "Book A", Year = 2000 },
+    new Book { Id = 2, Title = "Book B", Year = 2010 },
+    new Book { Id = 3, Title = "Book C", Year = 2020 }
+};
+
+// Configure the HTTP request pipeline to include Swagger in development.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+// Global exception handling
+app.UseExceptionHandler("/error");
+
+// Endpoint for global error handling
+app.Map("/error", (HttpContext httpContext) =>
+{
+    var exception = httpContext.Features.Get<IExceptionHandlerFeature>()?.Error;
+    return Results.Problem(title: "An unexpected error occurred", detail: exception?.Message);
+});
+
+// Endpoint to get all books
+app.MapGet("/books", () => books);
+
+// Endpoint to get a single book by ID
+app.MapGet("/books/{id}", (int id) => 
+    books.FirstOrDefault(b => b.Id == id) is Book book ? Results.Ok(book) : Results.NotFound());
+
+// Endpoint to get books published in a specific year
+app.MapGet("/books/year/{year}", (int year) => 
+    books.Where(b => b.Year == year).ToList());
+
+// Endpoint to search books by title
+app.MapGet("/books/search/{query}", (string query) => 
+    books.Where(b => b.Title.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList());
+
+// Endpoint to create a new book with model validation
+app.MapPost("/books", (Book book) =>
+{
+    if (!Validator.TryValidateObject(book, new ValidationContext(book), null, true))
+    {
+        return Results.BadRequest("Invalid book data.");
+    }
+    books.Add(book);
+    return Results.Created($"/books/{book.Id}", book);
+});
+
+// Endpoint to update an existing book with model validation
+app.MapPut("/books/{id}", (int id, Book inputBook) =>
+{
+    var book = books.FirstOrDefault(b => b.Id == id);
+    if (book == null) return Results.NotFound("Book not found.");
+
+    if (!Validator.TryValidateObject(inputBook, new ValidationContext(inputBook), null, true))
+    {
+        return Results.BadRequest("Invalid book data.");
+    }
+
+    book.Title = inputBook.Title;
+    book.Year = inputBook.Year;
+    return Results.Ok(book);
+});
+
+// Endpoint to delete a book by ID
+app.MapDelete("/books/{id}", (int id) =>
+{
+    var book = books.FirstOrDefault(b => b.Id == id);
+    if (book == null) return Results.NotFound("Book not found.");
+
+    books.Remove(book);
+    return Results.Ok($"Book with ID {id} deleted.");
+});
+
+app.Run();
+
+class Book
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [StringLength(100)]
+    public string Title { get; set; } = string.Empty;
+
+    [Range(1, 2100)]
     public int Year { get; set; }
 }
 
